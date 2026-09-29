@@ -51,6 +51,57 @@ _KEY_MAP = {
 }
 
 
+class LowPassFilter:
+    def __init__(self, alpha: float = 0.5):
+        self.alpha = float(alpha)
+        self.y = None
+
+    def filter(self, value: float) -> float:
+        if self.y is None:
+            self.y = float(value)
+        else:
+            self.y = self.alpha * float(value) + (1.0 - self.alpha) * self.y
+        return self.y
+
+
+class OneEuroFilter:
+    """Adaptive 1-Euro filter for smooth, low-latency cursor tracking."""
+
+    def __init__(self, min_cutoff: float = 0.8, beta: float = 0.005, d_cutoff: float = 1.0):
+        self.min_cutoff = float(min_cutoff)
+        self.beta = float(beta)
+        self.d_cutoff = float(d_cutoff)
+        self.x_filter = LowPassFilter()
+        self.dx_filter = LowPassFilter()
+        self.last_time = None
+
+    def _alpha(self, cutoff: float, dt: float) -> float:
+        tau = 1.0 / (2.0 * math.pi * cutoff)
+        return 1.0 / (1.0 + tau / dt)
+
+    def reset(self):
+        self.x_filter.y = None
+        self.dx_filter.y = None
+        self.last_time = None
+
+    def filter(self, x: float, timestamp: float = None) -> float:
+        now = timestamp if timestamp is not None else time.perf_counter()
+        if self.last_time is None:
+            self.last_time = now
+            self.x_filter.filter(x)
+            self.dx_filter.filter(0.0)
+            return x
+
+        dt = max(1e-4, now - self.last_time)
+        self.last_time = now
+
+        dx = (x - (self.x_filter.y if self.x_filter.y is not None else x)) / dt
+        edx = self.dx_filter.filter(dx)
+        cutoff = self.min_cutoff + self.beta * abs(edx)
+        self.x_filter.alpha = self._alpha(cutoff, dt)
+        return self.x_filter.filter(x)
+
+
 def _resolve_key(name: str):
     """Return a pynput Key or a plain char string."""
     if not _pynput_ok:
@@ -80,6 +131,8 @@ class ActionMapper:
 
         self.cursor_alpha = min(1.0, max(0.01, float(cursor_alpha)))
         self.cursor_deadzone = max(0, int(cursor_deadzone))
+        self._euro_x = OneEuroFilter(min_cutoff=0.8, beta=0.008)
+        self._euro_y = OneEuroFilter(min_cutoff=0.8, beta=0.008)
         self._smooth_cursor = None
         self._last_cursor = None
         self._dragging = False
@@ -192,9 +245,13 @@ class ActionMapper:
         dy = bottom - top if bottom > top else 1.0
         mapped_x = (float(x) - left) / dx
         mapped_y = (float(y) - top) / dy
+
+        filtered_x = self._euro_x.filter(mapped_x)
+        filtered_y = self._euro_y.filter(mapped_y)
+
         target = (
-            max(0, min(screen_width - 1, int(mapped_x * screen_width))),
-            max(0, min(screen_height - 1, int(mapped_y * screen_height))),
+            max(0, min(screen_width - 1, int(filtered_x * screen_width))),
+            max(0, min(screen_height - 1, int(filtered_y * screen_height))),
         )
         if self._smooth_cursor is None:
             self._smooth_cursor = target
@@ -212,6 +269,8 @@ class ActionMapper:
             self._last_cursor = candidate
 
     def reset_cursor(self):
+        self._euro_x.reset()
+        self._euro_y.reset()
         self._smooth_cursor = None
         self._last_cursor = None
 

@@ -1,10 +1,9 @@
 import unittest
 from types import SimpleNamespace
-
 import numpy as np
 
-from core.action_mapper import ActionMapper
-from core.gesture_engine import GestureEngine
+from core.action_mapper import ActionMapper, OneEuroFilter
+from core.gesture_engine import GestureEngine, GESTURE_META
 
 
 class GestureCoreTests(unittest.TestCase):
@@ -29,6 +28,20 @@ class GestureCoreTests(unittest.TestCase):
         mapper.set_cursor_bounds(-1.0, -1.0, 2.0, 2.0)
         self.assertEqual(mapper.cursor_alpha, 1.0)
         self.assertEqual(mapper.cursor_bounds, (0.0, 0.0, 1.0, 1.0))
+
+    def test_one_euro_filter_adaptive_smoothing(self):
+        euro = OneEuroFilter(min_cutoff=0.8, beta=0.008)
+        val1 = euro.filter(0.1, timestamp=0.0)
+        val2 = euro.filter(0.12, timestamp=0.033)
+        val3 = euro.filter(0.90, timestamp=0.066)
+        self.assertEqual(val1, 0.1)
+        self.assertTrue(0.1 < val2 < 0.12)
+        self.assertTrue(val3 > val2)
+
+    def test_new_gestures_meta_registered(self):
+        for key in ["OK_SIGN", "ROCK_ON", "CALL_ME", "FOUR"]:
+            self.assertIn(key, GESTURE_META)
+            self.assertIn("desc", GESTURE_META[key])
 
 
 if __name__ == "__main__":

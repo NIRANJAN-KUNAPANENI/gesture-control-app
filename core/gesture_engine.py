@@ -17,7 +17,11 @@ GESTURE_META = {
     "PEACE":       {"icon": "[V]",     "color": "#a855f7", "desc": "Peace / V"},
     "POINT":       {"icon": "[POINT]", "color": "#f72585", "desc": "Point"},
     "PINCH":       {"icon": "[PINCH]", "color": "#f59e0b", "desc": "Pinch / Volume"},
+    "OK_SIGN":     {"icon": "[OK]",    "color": "#06d6a0", "desc": "OK Sign"},
+    "ROCK_ON":     {"icon": "[ROCK]",  "color": "#f72585", "desc": "Rock / Horns"},
+    "CALL_ME":     {"icon": "[CALL]",  "color": "#a855f7", "desc": "Call Me"},
     "THREE":       {"icon": "[III]",   "color": "#00b4d8", "desc": "Three Fingers"},
+    "FOUR":        {"icon": "[IV]",    "color": "#00b4d8", "desc": "Four Fingers"},
     "SWIPE_LEFT":  {"icon": "[<--]",   "color": "#00b4d8", "desc": "Swipe Left"},
     "SWIPE_RIGHT": {"icon": "[-->]",   "color": "#00b4d8", "desc": "Swipe Right"},
     "SWIPE_UP":    {"icon": "[^]",     "color": "#00b4d8", "desc": "Swipe Up"},
@@ -150,24 +154,42 @@ class GestureEngine:
     def _classify_static(self, lm, hand_label: str):
         t, i, m, r, p = self._finger_states(lm, hand_label)
         total = sum([t, i, m, r, p])
-        pinch_distance = float(np.linalg.norm(lm[4] - lm[8]))
+        thumb_index_dist = float(np.linalg.norm(lm[4] - lm[8]))
 
-        if pinch_distance < 0.42 and not (m or r or p):
+        # OK Sign: Thumb and Index tips touch, Middle/Ring/Pinky extended
+        if thumb_index_dist < 0.38 and (m and r and p):
+            return "OK_SIGN"
+
+        # Pinch: Thumb and Index near each other, other fingers folded
+        if thumb_index_dist < 0.42 and not (m or r or p):
             return "PINCH"
 
         if total == 5:
             return "OPEN_PALM"
         if total == 0:
             return "FIST"
+
+        # Rock / Devil Horns: Index + Pinky extended, Middle + Ring folded
+        if i and p and not m and not r:
+            return "ROCK_ON"
+
+        # Call Me: Thumb + Pinky extended, Index + Middle + Ring folded
+        if t and p and not i and not m and not r:
+            return "CALL_ME"
+
         if t and not i and not m and not r and not p:
             # Thumb only — up or down?
             return "THUMBS_UP" if lm[4][1] < 0 else "THUMBS_DOWN"
+
         if not t and i and m and not r and not p:
             return "PEACE"
         if not t and i and not m and not r and not p:
             return "POINT"
         if not t and i and m and r and not p:
             return "THREE"
+        if not t and i and m and r and p:
+            return "FOUR"
+
         return "UNKNOWN"
 
     # ── Main process method ───────────────────────────────────────────────────

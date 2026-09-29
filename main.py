@@ -137,7 +137,9 @@ def main():
         app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     window = MainWindow(BASE_DIR)
-    window.show()
+    window.showNormal()
+    window.activateWindow()
+    window.raise_()
     app.aboutToQuit.connect(APP_LOCK.unlock)
     sys.exit(app.exec_())
 

@@ -189,8 +189,6 @@ class MainWindow(QMainWindow):
 
     def changeEvent(self, event):
         super().changeEvent(event)
-        if event.type() == QEvent.WindowStateChange and self.isMinimized():
-            QTimer.singleShot(0, self.hide)
 
     def _build_sidebar(self):
         sb = QWidget()

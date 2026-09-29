@@ -94,6 +94,53 @@ class CameraThread(QThread):
         self._calibration_samples = []
         self.calibration_complete.emit(float(left), float(top), float(right), float(bottom))
 
+    def _draw_hud_overlay(self, frame, displayed, confidence, processing_ms):
+        h, w, _ = frame.shape
+
+        # Bounding box around hand & pointer reticle
+        if self.engine and self.engine.last_image_landmarks is not None:
+            lms = self.engine.last_image_landmarks
+            pts_x = (lms[:, 0] * w).astype(int)
+            pts_y = (lms[:, 1] * h).astype(int)
+            min_x, max_x = max(0, np.min(pts_x) - 15), min(w, np.max(pts_x) + 15)
+            min_y, max_y = max(0, np.min(pts_y) - 15), min(h, np.max(pts_y) + 15)
+
+            bbox_color = (216, 180, 0) if self.control_unlocked else (68, 68, 239)
+            cv2.rectangle(frame, (min_x, min_y), (max_x, max_y), bbox_color, 1)
+
+            # Corner brackets
+            length = 15
+            for cx, cy in [(min_x, min_y), (max_x, min_y), (min_x, max_y), (max_x, max_y)]:
+                dx = 1 if cx == min_x else -1
+                dy = 1 if cy == min_y else -1
+                cv2.line(frame, (cx, cy), (cx + dx * length, cy), bbox_color, 2)
+                cv2.line(frame, (cx, cy), (cx, cy + dy * length), bbox_color, 2)
+
+            # Target reticle on index fingertip when pointing/pinching
+            if displayed in ("POINT", "PINCH"):
+                ix, iy = pts_x[8], pts_y[8]
+                cv2.circle(frame, (ix, iy), 10, (247, 37, 245), 2)
+                cv2.circle(frame, (ix, iy), 2, (247, 37, 245), -1)
+                cv2.line(frame, (ix - 14, iy), (ix + 14, iy), (247, 37, 245), 1)
+                cv2.line(frame, (ix, iy - 14), (ix, iy + 14), (247, 37, 245), 1)
+
+        # Top HUD bar
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (8, 8), (w - 8, 42), (16, 11, 8), -1)
+        cv2.addWeighted(overlay, 0.65, frame, 0.35, 0, frame)
+
+        lock_status = "UNLOCKED" if self.control_unlocked else "LOCKED (Show Palm)"
+        status_color = (160, 214, 6) if self.control_unlocked else (68, 68, 239)
+        cv2.putText(frame, f"STATUS: {lock_status}", (16, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, status_color, 1, cv2.LINE_AA)
+
+        if displayed not in ("NONE", ""):
+            cv2.putText(frame, f"GESTURE: {displayed}", (250, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (216, 180, 0), 1, cv2.LINE_AA)
+
+        cv2.putText(frame, f"{processing_ms:.0f}ms", (w - 80, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (160, 160, 160), 1, cv2.LINE_AA)
+
     def stop(self):
         self._running = False
         self.wait(3000)
@@ -223,11 +270,9 @@ class CameraThread(QThread):
                 self.action_mapper.update_volume(0.0, active=False)
                 self.action_mapper.release_drag()
 
-            # Emit gesture info
-            confidence = self.engine.last_confidence if self.engine else 0.0
-            self.gesture_signal.emit(
-                displayed, triggered or "", confidence, processing_ms
-            )
+            # Draw Cyberpunk HUD overlay
+            if self.mode != self.MODE_IDLE:
+                self._draw_hud_overlay(frame, displayed, confidence, processing_ms)
 
             # Convert frame → QImage
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

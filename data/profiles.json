@@ -13,5 +13,5 @@
   "cursor_margin": 0.08,
   "cursor_enabled": true,
   "volume_enabled": true,
-  "click_enabled": false
+  "click_enabled": true
 }
