@@ -1,0 +1,234 @@
+{
+  "media": {
+    "label": "Media Player",
+    "icon": "M",
+    "color": "#00b4d8",
+    "mappings": {
+      "OPEN_PALM": {
+        "type": "media_key",
+        "key": "media_play_pause",
+        "label": "Play / Pause"
+      },
+      "FIST": {
+        "type": "media_key",
+        "key": "media_volume_mute",
+        "label": "Mute"
+      },
+      "SWIPE_RIGHT": {
+        "type": "media_key",
+        "key": "media_next",
+        "label": "Next Track"
+      },
+      "SWIPE_LEFT": {
+        "type": "media_key",
+        "key": "media_previous",
+        "label": "Prev Track"
+      },
+      "THUMBS_UP": {
+        "type": "media_key",
+        "key": "media_volume_up",
+        "label": "Volume Up"
+      },
+      "THUMBS_DOWN": {
+        "type": "media_key",
+        "key": "media_volume_down",
+        "label": "Volume Down"
+      },
+      "PEACE": {
+        "type": "hotkey",
+        "keys": [
+          "ctrl",
+          "l"
+        ],
+        "label": "Focus Search"
+      }
+    }
+  },
+  "browser": {
+    "label": "Browser",
+    "icon": "B",
+    "color": "#a855f7",
+    "mappings": {
+      "SWIPE_LEFT": {
+        "type": "hotkey",
+        "keys": [
+          "alt",
+          "left"
+        ],
+        "label": "Go Back"
+      },
+      "SWIPE_RIGHT": {
+        "type": "hotkey",
+        "keys": [
+          "alt",
+          "right"
+        ],
+        "label": "Go Forward"
+      },
+      "SWIPE_UP": {
+        "type": "scroll",
+        "dx": 0,
+        "dy": 5,
+        "label": "Scroll Up"
+      },
+      "SWIPE_DOWN": {
+        "type": "scroll",
+        "dx": 0,
+        "dy": -5,
+        "label": "Scroll Down"
+      },
+      "OPEN_PALM": {
+        "type": "hotkey",
+        "keys": [
+          "ctrl",
+          "t"
+        ],
+        "label": "New Tab"
+      },
+      "FIST": {
+        "type": "hotkey",
+        "keys": [
+          "ctrl",
+          "w"
+        ],
+        "label": "Close Tab"
+      },
+      "PEACE": {
+        "type": "hotkey",
+        "keys": [
+          "ctrl",
+          "r"
+        ],
+        "label": "Refresh"
+      },
+      "THUMBS_UP": {
+        "type": "key",
+        "key": "page_up",
+        "label": "Page Up"
+      },
+      "THUMBS_DOWN": {
+        "type": "key",
+        "key": "page_down",
+        "label": "Page Down"
+      }
+    }
+  },
+  "gaming": {
+    "label": "Gaming",
+    "icon": "G",
+    "color": "#f72585",
+    "mappings": {
+      "OPEN_PALM": {
+        "type": "key",
+        "key": "space",
+        "label": "Jump"
+      },
+      "FIST": {
+        "type": "key",
+        "key": "e",
+        "label": "Interact"
+      },
+      "SWIPE_LEFT": {
+        "type": "key",
+        "key": "a",
+        "label": "Move Left"
+      },
+      "SWIPE_RIGHT": {
+        "type": "key",
+        "key": "d",
+        "label": "Move Right"
+      },
+      "SWIPE_UP": {
+        "type": "key",
+        "key": "w",
+        "label": "Move Forward"
+      },
+      "SWIPE_DOWN": {
+        "type": "key",
+        "key": "s",
+        "label": "Move Back"
+      },
+      "THUMBS_UP": {
+        "type": "key",
+        "key": "r",
+        "label": "Reload"
+      },
+      "THUMBS_DOWN": {
+        "type": "key",
+        "key": "c",
+        "label": "Crouch"
+      },
+      "PEACE": {
+        "type": "key",
+        "key": "tab",
+        "label": "Scoreboard"
+      },
+      "POINT": {
+        "type": "key",
+        "key": "f",
+        "label": "Use / Fire"
+      }
+    }
+  },
+  "navigation": {
+    "label": "Navigation",
+    "icon": "N",
+    "color": "#06d6a0",
+    "mappings": {
+      "SWIPE_LEFT": {
+        "type": "hotkey",
+        "keys": [
+          "alt",
+          "left"
+        ],
+        "label": "Back"
+      },
+      "SWIPE_RIGHT": {
+        "type": "hotkey",
+        "keys": [
+          "alt",
+          "right"
+        ],
+        "label": "Forward"
+      },
+      "SWIPE_UP": {
+        "type": "scroll",
+        "dx": 0,
+        "dy": 3,
+        "label": "Scroll Up"
+      },
+      "SWIPE_DOWN": {
+        "type": "scroll",
+        "dx": 0,
+        "dy": -3,
+        "label": "Scroll Down"
+      },
+      "OPEN_PALM": {
+        "type": "hotkey",
+        "keys": [
+          "ctrl",
+          "home"
+        ],
+        "label": "Go to Top"
+      },
+      "FIST": {
+        "type": "hotkey",
+        "keys": [
+          "ctrl",
+          "end"
+        ],
+        "label": "Go to Bottom"
+      },
+      "THUMBS_UP": {
+        "type": "key",
+        "key": "page_up",
+        "label": "Page Up"
+      },
+      "THUMBS_DOWN": {
+        "type": "key",
+        "key": "page_down",
+        "label": "Page Down"
+      }
+    }
+  }
+}

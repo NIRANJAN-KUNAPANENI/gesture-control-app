@@ -1,0 +1,8 @@
+opencv-python==4.8.1.78
+mediapipe==0.10.14
+PyQt5==5.15.11
+pynput==1.8.2
+numpy>=1.23.5,<1.24
+pycaw==20260921
+comtypes==1.4.17
+tensorflow==2.12.1; python_version < "3.11" and sys_platform == "win32"

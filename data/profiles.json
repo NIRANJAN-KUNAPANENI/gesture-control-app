@@ -1,0 +1,17 @@
+{
+  "profiles": [
+    {
+      "id": "default",
+      "name": "Default User",
+      "color": "#00b4d8",
+      "active_preset": "media",
+      "created_at": "2024-01-01"
+    }
+  ],
+  "active_profile": "default",
+  "cursor_alpha": 0.3,
+  "cursor_margin": 0.08,
+  "cursor_enabled": true,
+  "volume_enabled": true,
+  "click_enabled": false
+}

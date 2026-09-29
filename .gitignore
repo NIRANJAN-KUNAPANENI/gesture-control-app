@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Build artifacts and executables
+build/
+dist/
+release/
+*.exe
+*.spec
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+
+# Local logs and temporary runtime data
+data/*.log
+data/gestureflow.lock
