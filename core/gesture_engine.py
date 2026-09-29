@@ -68,6 +68,7 @@ class GestureEngine:
             os.path.dirname(os.path.dirname(__file__)),
             "models", "keypoint_classifier_label.csv",
         )
+        self.custom_clf = None
         self._load_classifier(model_path, label_path)
 
     def _load_classifier(self, model_path, label_path):
@@ -91,6 +92,17 @@ class GestureEngine:
         return flattened / scale if scale >= 1e-6 else flattened
 
     def _infer_model_gesture(self, image_landmarks):
+        if self.custom_clf is not None:
+            try:
+                flattened = self._model_features(image_landmarks)
+                pred = self.custom_clf.predict([flattened])[0]
+                proba = float(np.max(self.custom_clf.predict_proba([flattened])))
+                if proba >= 0.6:
+                    self.last_confidence = proba
+                    return str(pred)
+            except Exception:
+                pass
+
         if self.interpreter is None:
             return None
         flattened = self._model_features(image_landmarks)
@@ -102,6 +114,41 @@ class GestureEngine:
         gesture_id = int(np.argmax(scores))
         self.last_confidence = float(scores[gesture_id])
         return self.labels[gesture_id] if gesture_id < len(self.labels) else None
+
+    def train_custom_model(self, recordings_data, model_save_path=None):
+        """Train a scikit-learn KNN classifier from recorded gesture landmark datasets."""
+        try:
+            from sklearn.neighbors import KNeighborsClassifier
+            import joblib
+
+            X = []
+            y = []
+            for item in recordings_data:
+                label = item.get("label")
+                frames = item.get("landmarks_history", [])
+                for frame_lm in frames:
+                    if len(frame_lm) == 21:
+                        pts = np.array(frame_lm, dtype=np.float32)[:, :2]
+                        pts -= pts[0]
+                        flat = pts.reshape(-1)
+                        scale = float(np.max(np.abs(flat)))
+                        norm_flat = flat / scale if scale >= 1e-6 else flat
+                        X.append(norm_flat)
+                        y.append(label)
+
+            if len(X) < 5 or len(set(y)) < 1:
+                return False, "At least 5 frames of recorded gestures are required."
+
+            clf = KNeighborsClassifier(n_neighbors=min(3, len(X)))
+            clf.fit(X, y)
+
+            self.custom_clf = clf
+            if model_save_path:
+                joblib.dump(clf, model_save_path)
+
+            return True, f"Model trained successfully on {len(X)} samples across {len(set(y))} gestures!"
+        except Exception as e:
+            return False, f"Training error: {str(e)}"
 
     @staticmethod
     def normalize_landmarks(landmarks):

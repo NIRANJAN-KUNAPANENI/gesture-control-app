@@ -16,6 +16,8 @@ from app.screens.home_screen     import HomeScreen
 from app.screens.control_screen  import ControlScreen
 from app.screens.recorder_screen import RecorderScreen
 from app.screens.settings_screen import SettingsScreen
+from app.mini_hud import MiniHUD
+from core.voice_engine import VoiceEngine
 
 try:
     from pynput import keyboard
@@ -88,6 +90,13 @@ class MainWindow(QMainWindow):
         self.cam_thread.error_signal.connect(self._on_cam_error)
         self.cam_thread.start()
 
+        # ── Mini HUD & Voice Engine ───────────────────────────────────────────
+        self.mini_hud = MiniHUD(self)
+        self.cam_thread.gesture_signal.connect(self._update_mini_hud)
+
+        self.voice_engine = VoiceEngine(self.action_mapper, self.cam_thread)
+        self.voice_engine.start()
+
         # Status update timer
         self._tick_timer = QTimer(self)
         self._tick_timer.timeout.connect(self._tick_status)
@@ -109,6 +118,10 @@ class MainWindow(QMainWindow):
         show_action = QAction("Show GestureFlow", self)
         show_action.triggered.connect(self._show_window)
         menu.addAction(show_action)
+
+        hud_action = QAction("Toggle Floating Mini HUD", self)
+        hud_action.triggered.connect(self._toggle_mini_hud)
+        menu.addAction(hud_action)
 
         pause_action = QAction("Pause / Resume control", self)
         pause_action.triggered.connect(self.control_screen._toggle_control)
@@ -183,7 +196,23 @@ class MainWindow(QMainWindow):
         self.raise_()
         self.activateWindow()
 
+    def _toggle_mini_hud(self):
+        if self.mini_hud.isVisible():
+            self.mini_hud.hide()
+        else:
+            self.mini_hud.show()
+            self.mini_hud.raise_()
+
+    def _update_mini_hud(self, displayed: str, triggered: str, confidence: float = 0.0, processing_ms: float = 0.0):
+        if hasattr(self, "mini_hud"):
+            action_label = self.action_mapper.get_action_label(displayed)
+            self.mini_hud.update_status(displayed, action_label, self.cam_thread.control_unlocked, confidence)
+
     def _exit_application(self):
+        if hasattr(self, "voice_engine"):
+            self.voice_engine.stop()
+        if hasattr(self, "mini_hud"):
+            self.mini_hud.close()
         self._tray.hide()
         self.close()
 

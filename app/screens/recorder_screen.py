@@ -207,6 +207,12 @@ class RecorderScreen(QWidget):
         del_btn.clicked.connect(self._delete_selected)
         right_layout.addWidget(del_btn)
 
+        train_btn = QPushButton("⚡ TRAIN CUSTOM MODEL")
+        train_btn.setObjectName("primary_btn")
+        train_btn.setCursor(Qt.PointingHandCursor)
+        train_btn.clicked.connect(self._train_model)
+        right_layout.addWidget(train_btn)
+
         root.addWidget(right, 0)
 
         # Timer for recording progress
@@ -246,6 +252,8 @@ class RecorderScreen(QWidget):
 
         if self._recording:
             self._record_data.append(displayed)
+            if self.cam_thread.engine and self.cam_thread.engine.last_image_landmarks is not None:
+                self._record_landmarks.append(self.cam_thread.engine.last_image_landmarks.tolist())
 
     # ── Record ────────────────────────────────────────────────────────────────
     def _toggle_recording(self):
@@ -262,6 +270,7 @@ class RecorderScreen(QWidget):
     def _start_recording(self):
         self._recording   = True
         self._record_data = []
+        self._record_landmarks = []
         self._rec_frames  = 0
         self.record_btn.setText("■  STOP RECORDING")
         self.record_btn.setObjectName("primary_btn")
@@ -321,7 +330,6 @@ class RecorderScreen(QWidget):
         label = self.label_input.text().strip()
         gtype = "static" if self.static_radio.isChecked() else "dynamic"
 
-        # Count most frequent gesture in recording
         from collections import Counter
         counts = Counter(
             g for g in self._record_data if g not in ("NONE", "UNKNOWN")
@@ -329,16 +337,29 @@ class RecorderScreen(QWidget):
         dominant = counts.most_common(1)[0][0] if counts else "UNKNOWN"
 
         record = {
-            "id":        datetime.now().strftime("%Y%m%d_%H%M%S"),
-            "label":     label,
-            "type":      gtype,
-            "dominant":  dominant,
-            "frames":    self._rec_frames,
-            "recorded_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "id":                datetime.now().strftime("%Y%m%d_%H%M%S"),
+            "label":             label,
+            "type":              gtype,
+            "dominant":          dominant,
+            "frames":            self._rec_frames,
+            "landmarks_history": getattr(self, "_record_landmarks", []),
+            "recorded_at":       datetime.now().strftime("%Y-%m-%d %H:%M"),
         }
         self.recordings.append(record)
         self._save_recordings()
         self._refresh_list()
+
+    def _train_model(self):
+        if not self.recordings:
+            QMessageBox.information(self, "No Recordings", "Record at least one gesture before training.")
+            return
+        if self.cam_thread.engine:
+            model_path = os.path.join(self.save_path, "custom_classifier.joblib")
+            ok, msg = self.cam_thread.engine.train_custom_model(self.recordings, model_path)
+            if ok:
+                QMessageBox.information(self, "Training Complete", msg)
+            else:
+                QMessageBox.warning(self, "Training Failed", msg)
 
     # ── List ──────────────────────────────────────────────────────────────────
     def _refresh_list(self):
