@@ -96,13 +96,8 @@ class MainWindow(QMainWindow):
         self._create_tray()
         self._start_global_hotkey()
 
-        # Default nav selection
-        self._nav_buttons[0].setProperty("active", "true")
-        self._nav_buttons[0].style().unpolish(self._nav_buttons[0])
-        self._nav_buttons[0].style().polish(self._nav_buttons[0])
-        self._navigate(1)
-        if not self._setup_complete():
-            QTimer.singleShot(250, self._show_setup_wizard)
+        # Default nav selection: Home screen
+        self._navigate(0)
 
     # ── Sidebar ───────────────────────────────────────────────────────────────
     def _create_tray(self):

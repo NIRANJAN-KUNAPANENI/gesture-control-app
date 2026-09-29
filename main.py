@@ -106,11 +106,25 @@ from PyQt5.QtCore import QLockFile, Qt
 from app.main_window import MainWindow
 from app.styles import STYLE
 
-def main():
+def _acquire_lock():
     global APP_LOCK
-    APP_LOCK = QLockFile(os.path.join(DATA_DIR, "gestureflow.lock"))
-    APP_LOCK.setStaleLockTime(0)
+    lock_path = os.path.join(DATA_DIR, "gestureflow.lock")
+    APP_LOCK = QLockFile(lock_path)
+    APP_LOCK.setStaleLockTime(1000)
     if not APP_LOCK.tryLock(100):
+        APP_LOCK.removeStaleLockFile()
+        if not APP_LOCK.tryLock(100):
+            try:
+                os.remove(lock_path)
+                APP_LOCK = QLockFile(lock_path)
+                return APP_LOCK.tryLock(100)
+            except Exception:
+                return False
+    return True
+
+def main():
+    if not _acquire_lock():
+        print("GestureFlow is already running.")
         return
 
     app = QApplication(sys.argv)

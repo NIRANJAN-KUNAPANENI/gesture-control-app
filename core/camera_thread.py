@@ -118,39 +118,41 @@ class CameraThread(QThread):
         )
         self.engine.set_min_action_confidence(self.action_confidence)
 
-        cap = self._open_camera()
-        if cap is None and self.camera_index != 0:
-            original_index = self.camera_index
-            self.camera_index = 0
-            cap = self._open_camera()
-            self.camera_index = original_index
-        if cap is None:
-            self.error_signal.emit("Could not open camera. Check Settings.")
-            self._running = False
-            return
-
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        cap.set(cv2.CAP_PROP_FPS, 30)
-
+        cap = None
         read_failures = 0
         profile_check_frame = 0
+
         while self._running:
-            if cap is None:
-                read_failures += 1
-                if read_failures >= 30:
-                    cap = self._open_camera()
-                    read_failures = 0
-                time.sleep(0.03)
+            if self.mode == self.MODE_IDLE:
+                if cap is not None:
+                    cap.release()
+                    cap = None
+                time.sleep(0.05)
                 continue
+
+            if cap is None:
+                cap = self._open_camera()
+                if cap is None and self.camera_index != 0:
+                    original_index = self.camera_index
+                    self.camera_index = 0
+                    cap = self._open_camera()
+                    self.camera_index = original_index
+                if cap is None:
+                    self.error_signal.emit("Could not open camera. Check Settings or close other camera apps.")
+                    time.sleep(0.5)
+                    continue
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                cap.set(cv2.CAP_PROP_FPS, 30)
+
             ret, frame = cap.read()
             if not ret:
                 read_failures += 1
-                if read_failures >= 30:
-                    cap.release()
-                    cap = self._open_camera()
-                    if cap is None:
-                        self.error_signal.emit("Camera read failed. Reconnecting...")
+                if read_failures >= 15:
+                    if cap is not None:
+                        cap.release()
+                        cap = None
+                    self.error_signal.emit("Camera feed interrupted. Attempting reconnect...")
                     read_failures = 0
                 time.sleep(0.03)
                 continue
